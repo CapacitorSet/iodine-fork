@@ -42,6 +42,12 @@ extern const unsigned char raw_header[RAW_HDR_LEN];
 #include <arpa/inet.h>
 #endif
 
+#ifdef __cplusplus
+#define extfun extern "C"
+#else
+#define extfun
+#endif
+
 #define DNS_PORT 53
 
 #ifndef MIN
@@ -109,11 +115,25 @@ enum connection {
 	CONN_MAX
 };
 
+struct iodine_client_vars {
+	char if_name[250]; // todo: not yet refactored from tun.c
+
+	int running;
+
+	struct packet outpkt;
+	int outchunkresent;
+
+	int selecttimeout;
+	long send_ping_soon;
+	time_t lastdownstreamtime;
+	long send_query_sendcnt;
+};
+
 void check_superuser(void (*usage_fn)(void));
 char *format_addr(struct sockaddr_storage *sockaddr, int sockaddr_len);
 int get_addr(char *, int, int, int, struct sockaddr_storage *);
 int open_dns(struct sockaddr_storage *, size_t);
-int open_dns_from_host(char *host, int port, int addr_family, int flags);
+extfun int open_dns_from_host(char *host, int port, int addr_family, int flags);
 void close_dns(int);
 
 void do_chroot(char *);

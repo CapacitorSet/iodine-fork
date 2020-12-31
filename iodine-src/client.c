@@ -59,7 +59,9 @@
 
 static void handshake_lazyoff(int dns_fd);
 
-static int running;
+struct iodine_client_vars *vars;
+
+#define running vars->running
 static const char *password;
 
 static struct sockaddr_storage nameserv;
@@ -70,9 +72,9 @@ static const char *topdomain;
 static uint16_t rand_seed;
 
 /* Current up/downstream IP packet */
-static struct packet outpkt;
+#define outpkt vars->outpkt
 static struct packet inpkt;
-int outchunkresent = 0;
+#define outchunkresent vars->outchunkresent
 
 /* My userid at the server */
 static char userid;
@@ -104,17 +106,18 @@ static unsigned short do_qtype = T_UNSET;
 /* My connection mode */
 static enum connection conn;
 
-static int selecttimeout;		/* RFC says timeout minimum 5sec */
+#define selecttimeout vars->selecttimeout
 static int lazymode;
-static long send_ping_soon;
-static time_t lastdownstreamtime;
-static long send_query_sendcnt = -1;
+#define send_ping_soon vars->send_ping_soon
+#define lastdownstreamtime vars->lastdownstreamtime
+#define send_query_sendcnt vars->send_query_sendcnt
 static long send_query_recvcnt = 0;
 static int hostname_maxlen = 0xFF;
 
 void
-client_init()
+client_init(struct iodine_client_vars *src_vars)
 {
+	vars = src_vars;
 	running = 1;
 	b32 = get_base32_encoder();
 	b64 = get_base64_encoder();
@@ -136,6 +139,8 @@ client_init()
 	inpkt.len = 0;
 	inpkt.seqno = 0;
 	inpkt.fragment = 0;
+
+	send_query_sendcnt = -1;
 }
 
 void
@@ -170,7 +175,7 @@ client_set_password(const char *cp)
 }
 
 int
-client_set_qtype(char *qtype)
+client_set_qtype(const char *qtype)
 {
 	if (!strcasecmp(qtype, "NULL"))
       		do_qtype = T_NULL;
@@ -351,7 +356,7 @@ is_sending()
 	return (outpkt.len != 0);
 }
 
-static void
+void
 send_chunk(int fd)
 {
 	char buf[4096];
@@ -396,7 +401,7 @@ send_chunk(int fd)
 	send_query(fd, buf);
 }
 
-static void
+void
 send_ping(int fd)
 {
 	if (conn == CONN_DNS_NULL) {
@@ -747,7 +752,7 @@ handshake_waitdns(int dns_fd, char *buf, int buflen, char c1, char c2, int timeo
 	return -1;
 }
 
-static int
+int
 tunnel_tun(int tun_fd, int dns_fd)
 {
 	unsigned long outlen;
@@ -787,7 +792,7 @@ tunnel_tun(int tun_fd, int dns_fd)
 	return read;
 }
 
-static int
+int
 tunnel_dns(int tun_fd, int dns_fd)
 {
 	static long packrecv = 0;
@@ -1090,105 +1095,6 @@ tunnel_dns(int tun_fd, int dns_fd)
 	}
 
 	return read;
-}
-
-int
-client_tunnel(int tun_fd, int dns_fd)
-{
-	struct timeval tv;
-	fd_set fds;
-	int rv;
-	int i;
-
-	rv = 0;
-	lastdownstreamtime = time(NULL);
-	send_query_sendcnt = 0;  /* start counting now */
-
-	while (running) {
-		tv.tv_sec = selecttimeout;
-		tv.tv_usec = 0;
-
-		if (is_sending()) {
-			/* fast timeout for retransmits */
-			tv.tv_sec = 1;
-			tv.tv_usec = 0;
-		}
-
-		if (send_ping_soon) {
-			tv.tv_sec = 0;
-			tv.tv_usec = send_ping_soon * 1000;
-		}
-
-		FD_ZERO(&fds);
-		if (!is_sending() || outchunkresent >= 2) {
-			/* If re-sending upstream data, chances are that
-			   we're several seconds behind already and TCP
-			   will start filling tun buffer with (useless)
-			   retransmits.
-			   Get up-to-date fast by simply dropping stuff,
-			   that's what TCP is designed to handle. */
-			FD_SET(tun_fd, &fds);
-		}
-		FD_SET(dns_fd, &fds);
-
-		i = select(MAX(tun_fd, dns_fd) + 1, &fds, NULL, NULL, &tv);
-
- 		if (lastdownstreamtime + 60 < time(NULL)) {
- 			warnx("No downstream data received in 60 seconds, shutting down.");
- 			running = 0;
- 		}
-
-		if (running == 0)
-			break;
-
-		if (i < 0)
-			err(1, "select");
-
-		if (i == 0) {
-			/* timeout */
-			if (is_sending()) {
-				/* Re-send current fragment; either frag
-				   or ack probably dropped somewhere.
-				   But problem: no cache-miss-counter,
-				   so hostname will be identical.
-				   Just drop whole packet after 3 retries,
-				   and TCP retransmit will solve it.
-				   NOTE: tun dropping above should be
-				   >=(value_here - 1) */
-				if (outchunkresent < 3) {
-					outchunkresent++;
-					send_chunk(dns_fd);
-				} else {
-					outpkt.offset = 0;
-					outpkt.len = 0;
-					outpkt.sentlen = 0;
-					outchunkresent = 0;
-
-					send_ping(dns_fd);
-				}
-			} else {
-				send_ping(dns_fd);
-			}
-			send_ping_soon = 0;
-
-		} else {
-
-			if (FD_ISSET(tun_fd, &fds)) {
-				if (tunnel_tun(tun_fd, dns_fd) <= 0)
-					continue;
-				/* Returns -1 on error OR when quickly
-				   dropping data in case of DNS congestion;
-				   we need to _not_ do tunnel_dns() then.
-				   If chunk sent, sets send_ping_soon=0. */
-			}
-			if (FD_ISSET(dns_fd, &fds)) {
-				if (tunnel_dns(tun_fd, dns_fd) <= 0)
-					continue;
-			}
-		}
-	}
-
-	return rv;
 }
 
 static void

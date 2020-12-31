@@ -17,24 +17,31 @@
 
 #ifndef __CLIENT_H__
 #define __CLIENT_H__
+#include "common.h"
 
-void client_init();
-void client_stop();
+extfun void client_init(struct iodine_client_vars *src_vars);
+extfun void client_stop();
 
-enum connection client_get_conn();
-const char *client_get_raw_addr();
+extfun enum connection client_get_conn();
+extfun const char *client_get_raw_addr();
 
-void client_set_nameserver(struct sockaddr_storage *, int);
-void client_set_topdomain(const char *cp);
-void client_set_password(const char *cp);
-int client_set_qtype(char *qtype);
-char *client_get_qtype();
-void client_set_downenc(char *encoding);
-void client_set_selecttimeout(int select_timeout);
-void client_set_lazymode(int lazy_mode);
-void client_set_hostname_maxlen(int i);
+extfun void client_set_nameserver(struct sockaddr_storage *, int);
+extfun void client_set_topdomain(const char *cp);
+extfun void client_set_password(const char *cp);
+extfun int client_set_qtype(const char *qtype);
+extfun char *client_get_qtype();
+extfun void client_set_downenc(char *encoding);
+extfun void client_set_selecttimeout(int select_timeout);
+extfun void client_set_lazymode(int lazy_mode);
+extfun void client_set_hostname_maxlen(int i);
 
-int client_handshake(int dns_fd, int raw_mode, int autodetect_frag_size, int fragsize);
-int client_tunnel(int tun_fd, int dns_fd);
+extfun int client_handshake(int dns_fd, int raw_mode, int autodetect_frag_size, int fragsize);
+extfun int client_tunnel(int tun_fd, int dns_fd);
+
+extfun void send_chunk(int fd);
+extfun void send_ping(int fd);
+
+extfun int tunnel_dns(int tun_fd, int dns_fd);
+extfun int tunnel_tun(int tun_fd, int dns_fd);
 
 #endif

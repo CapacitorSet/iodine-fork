@@ -55,6 +55,7 @@
 #include "login.h"
 #include "version.h"
 #include "client.h"
+#include "tun.h"
 
 static void handshake_lazyoff(int dns_fd);
 

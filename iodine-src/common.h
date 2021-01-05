@@ -146,8 +146,8 @@ struct iodine_server_vars {
 
 void check_superuser(void (*usage_fn)(void));
 char *format_addr(struct sockaddr_storage *sockaddr, int sockaddr_len);
-int get_addr(char *, int, int, int, struct sockaddr_storage *);
-int open_dns(struct sockaddr_storage *, size_t);
+extfun int get_addr(char *, int, int, int, struct sockaddr_storage *);
+extfun int open_dns(struct sockaddr_storage *, size_t);
 extfun int open_dns_from_host(char *host, int port, int addr_family, int flags);
 void close_dns(int);
 
@@ -158,7 +158,7 @@ void do_pidfile(char *);
 
 void read_password(char*, size_t);
 
-int check_topdomain(char *, char **);
+extfun int check_topdomain(char *, char **);
 
 #if defined(WINDOWS32) || defined(ANDROID)
 #ifndef ANDROID

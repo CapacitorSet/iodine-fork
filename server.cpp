@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <unistd.h>
 
 #ifdef WINDOWS32
 #include "windows.h"
@@ -30,13 +31,13 @@ IodineServer::IodineServer() {
 }
 
 IodineServer::~IodineServer() {
-	close_dns(dnsd_fd);
-	close_tun(tun_fd);
+	close(dnsd_fd);
+	close(tun_fd);
 }
 
 void IodineServer::stop() {}
 
-#define warnx(...) fprintf(stderr, __VA_ARGS__);
+#define warnx(...) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); }
 #define usage() { fprintf(stderr, "Use -h for usage info.\n"); return 1; } // todo: fix
 
 int IodineServer::init(struct iodine_server_config config) {
@@ -144,7 +145,7 @@ int IodineServer::init(struct iodine_server_config config) {
 	if (!config.skipipconfig) {
 		const char *other_ip = users_get_first_ip();
 		if (tun_setip(if_name, config.ip_string, other_ip, vars.netmask) != 0 || tun_setmtu(if_name, config.mtu) != 0) {
-			close_tun(tun_fd);
+			close(tun_fd);
 			free((void*) other_ip);
 			return 1;
 		}
@@ -161,8 +162,8 @@ int IodineServer::init(struct iodine_server_config config) {
 	} else {
 #endif
 		if ((dnsd_fd = open_dns(&dnsaddr, dnsaddr_len)) < 0) {
-			close_dns(dnsd_fd);
-			close_tun(tun_fd);
+			close(dnsd_fd);
+			close(tun_fd);
 			return 1;
 		}
 #ifdef HAVE_SYSTEMD
@@ -172,9 +173,9 @@ int IodineServer::init(struct iodine_server_config config) {
 	bind_fd = 0;
 	if (config.bind_enable) {
 		if ((bind_fd = open_dns_from_host(NULL, 0, AF_INET, 0)) < 0) {
-			close_dns(bind_fd);
-			close_dns(dnsd_fd);
-			close_tun(tun_fd);
+			close(bind_fd);
+			close(dnsd_fd);
+			close(tun_fd);
 			return 1;
 		}
 	}

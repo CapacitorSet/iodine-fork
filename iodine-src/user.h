@@ -17,6 +17,7 @@
 
 #ifndef __USER_H__
 #define __USER_H__
+#include "common.h"
 
 #define USERS 16
 
@@ -78,8 +79,8 @@ struct tun_user {
 
 extern struct tun_user *users;
 
-int init_users(in_addr_t, int);
-const char* users_get_first_ip();
+extfun int init_users(in_addr_t, int);
+extfun const char* users_get_first_ip();
 int users_waiting_on_reply();
 int find_user_by_ip(uint32_t);
 int all_users_waiting_to_send();

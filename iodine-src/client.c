@@ -53,7 +53,6 @@
 #include "base128.h"
 #include "dns.h"
 #include "login.h"
-#include "tun.h"
 #include "version.h"
 #include "client.h"
 

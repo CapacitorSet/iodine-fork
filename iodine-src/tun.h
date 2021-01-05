@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2008-2014 Erik Ekman <yarrick@kryo.se>
+ * Copyright (c) 2006-2014 Erik Ekman <yarrick@kryo.se>,
+ * 2006-2009 Bjorn Andersson <flex@kryo.se>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,29 +15,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __FW_QUERY_H__
-#define __FW_QUERY_H__
-
+#ifndef _TUN_H_
+#define _TUN_H_
 #include "common.h"
-#include <sys/types.h>
-#ifdef WINDOWS32
-#include "windows.h"
-#include <winsock2.h>
-#else
-#include <sys/socket.h>
-#endif
 
-#define FW_QUERY_CACHE_SIZE 16
+extfun void iodine_set_if_name(const char *src);
+int open_tun(const char *);
+void close_tun(int);
+int write_tun(int, char *, size_t);
+ssize_t read_tun(int, char *, size_t);
+int tun_setip(const char *, const char *, int);
+int tun_setmtu(const unsigned);
 
-struct fw_query {
-	struct sockaddr_storage addr;
-	int addrlen;
-	unsigned short id;
-};
-
-extfun void fw_query_init();
-void fw_query_put(struct fw_query *fw_query);
-void fw_query_get(unsigned short query_id, struct fw_query **fw_query);
-
-#endif /*__FW_QUERY_H__*/
-
+#endif /* _TUN_H_ */

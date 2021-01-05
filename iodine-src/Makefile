@@ -1,14 +1,13 @@
-COMMONOBJS = dns.o read.o encoding.o login.o base32.o base64.o base64u.o base128.o md5.o common.o
+COMMONOBJS = tun.o dns.o read.o encoding.o login.o base32.o base64.o base64u.o base128.o md5.o common.o
 CLIENTOBJS = client.o
 CLIENT = iodine.o
-SERVEROBJS = user.o fw_query.o
+SERVEROBJS = server.o user.o fw_query.o
 SERVER = iodined.o
 
 OS = `echo $(TARGETOS) | tr "a-z" "A-Z"`
 ARCH = `uname -m`
 
 LIBPATH = -L.
-LDFLAGS +=  -lz `sh osflags $(TARGETOS) link` $(LIBPATH)
 CFLAGS += -std=c99 -c -g -Wall -D$(OS) -pedantic `sh osflags $(TARGETOS) cflags` -fmax-errors=1
 
 all: stateos $(CLIENT) $(SERVER)

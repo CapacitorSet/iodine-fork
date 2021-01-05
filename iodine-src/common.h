@@ -129,6 +129,21 @@ struct iodine_client_vars {
 	long send_query_sendcnt;
 };
 
+struct iodine_server_vars {
+	char *topdomain;
+	char password[33];
+	int created_users;
+
+	int check_ip;
+	int my_mtu;
+	in_addr_t my_ip;
+	int netmask;
+
+	in_addr_t ns_ip;
+
+	int bind_port;
+};
+
 void check_superuser(void (*usage_fn)(void));
 char *format_addr(struct sockaddr_storage *sockaddr, int sockaddr_len);
 int get_addr(char *, int, int, int, struct sockaddr_storage *);
